@@ -1,15 +1,19 @@
 # REGISTRATION PARAMS
 chessboard_registration:
-  corners_x: 5 # number of corners in the x direction
-  corners_y: 7 # number of corners in the y direction
-  num_transform_avg: 10 # number corner detections to average together
+  corners_x: 4 # number of corners in the x direction
+  corners_y: 3 # number of corners in the y direction
+  num_transform_avg: 5 # number corner detections to average together
   num_images: 5 # number of depth images to take median of for noise reduction
-  color_image_rescale_factor: 4.0 # rate to upsame the color image for detections
+  color_image_rescale_factor: 1.0 # rate to upsame the color image for detections
   flip_normal: 0
   point_order: col_major
+  
+  # VISUALIZATION PARAMS
+  vis: False # visualize registration
+  debug: 1 # show the final pose detection
+  scale_amt: 0.1 # scale for vis axes
 
 calib_dir: calib/ # directory for the output
-chessboard_tf: calib/cb_to_world.tf
 
 # SENSOR CALIBRATION LIST
 sensors:
