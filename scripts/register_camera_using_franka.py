@@ -28,6 +28,10 @@ if __name__ == '__main__':
     config = YamlConfig(config_filename)
 
     robot = FrankaArm()
+    
+    print('Applying 0 force torque control for {}s'.format(20))
+    robot.run_guide_mode(20)
+
     T_ee_world = robot.get_pose()
 
     # Get T_cb_world by using T_ee_world*T_cb_ee
