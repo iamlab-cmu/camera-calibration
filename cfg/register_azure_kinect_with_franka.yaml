@@ -1,5 +1,5 @@
 # REGISTRATION PARAMS
-chessboard_registration:
+registration:
   corners_x: 4 # number of corners in the x direction
   corners_y: 3 # number of corners in the y direction
   num_transform_avg: 5 # number corner detections to average together
@@ -17,13 +17,24 @@ calib_dir: calib/ # directory for the output
 
 # SENSOR CALIBRATION LIST
 sensors:
-  azure_kinect_overhead:
-    sensor_config:
-      pipeline_mode: 0 # opengl
-      type: bridged_kinect2
-      device_num: 0
-      flip_images: 0
-      quality: 'hd'
+  # kinect_negx:
+  #   pipeline_mode: 0 # opengl
+  #   type: bridged_kinect2
+  #   device_num: 0
+  #   flip_images: 0
+  #   quality: 'hd'
+  #   kwargs:
+  #     frame: kinect_negx
+  #     topic_prefix: kinect_negx
+  kinect_posx:
+    pipeline_mode: 0 # opengl
+    type: bridged_kinect2
+    device_num: 0
+    flip_images: 0
+    quality: 'hd'
+    kwargs:
+      frame: kinect_posx
+      topic_prefix: kinect_posx
 
 # ROBOT VERIFICATION PARAMS
 use_robot: 0
