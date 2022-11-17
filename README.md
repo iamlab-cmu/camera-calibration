@@ -1,15 +1,8 @@
-# Exploring Object Representations for Future Applications in our Research
-
-AI for Manipulation (Fall '22) \
-Team members: John Kim, Mark Lee, Pat Callaghan
-
----
-
+![Screenshot](handeye_calibration.png)
 
 
 ## Overview
-Step (1/5) for data collection process of the Dense Object Correspondence Paper. 
-Takes set of [RGB image, End-effector pose] from realsense D435 camera mounted on Franka Robot Arm, to solve the Ax = Bx calibration problem using the ChAurco board. 
+Takes set of [RGB image, End-effector pose] from realsense D435 camera mounted on Franka Robot Arm, to solve the Ax = xB calibration problem using the ChAurco board where x = extrinsic calibration.
 
 ## Install
 - python3 and compatiable opencv version to run ChAruco functions. Best found by running it and resolving the missing libaries.
