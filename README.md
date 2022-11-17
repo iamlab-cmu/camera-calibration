@@ -34,11 +34,13 @@ $ bash bash_scripts/start_control_pc.sh -u student -i iam-[insert robot name her
 - Modify the main.py file to adjust the path to where you want the generated cam_transform.csv and ee_transform.csv files.  
 - Modify the main.py file to adjust the intrinsic camera calibration info. You can do this by rosecho calling the topic /camera/color/camera_info.
 - Modify the ChAruco.py file init function to adjust the CharucoBoard_create() parameters with the ChAruco board dimensions you printed.  
+- Make sure Franka is powered up and Frankpy ROS API is running, as well as the realsense ROS node (verify by $rostopic list) 
 
 ```
 $ python main.py
 
 ```
+- This code will put Franka into Guide Mode. Manually hand move the robot to 15 different positions, press enter in between each position to store data.
 - Given the generated two .csv files, modify publisher.py file if needed to see the path to the two .csv files are correct and can be loaded.
 - Run the VISP server that will print out camera extrinsic info upon a rosservice call to publish the data. The sequence is as follows in separate terminals:
 
