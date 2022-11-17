@@ -1,51 +1,58 @@
-# camera-calibration
+# Exploring Object Representations for Future Applications in our Research
 
-## Installation
+AI for Manipulation (Fall '22) \
+Team members: John Kim, Mark Lee, Pat Callaghan
 
-1. Clone the following repository:
+---
+
+
+
+## Overview
+Step (1/5) for data collection process of the Dense Object Correspondence Paper. 
+Takes set of [RGB image, End-effector pose] from realsense D435 camera mounted on Franka Robot Arm, to solve the Ax = Bx calibration problem using the ChAurco board. 
+
+## Install
+- python3 and compatiable opencv version to run ChAruco functions. Best found by running it and resolving the missing libaries.
 ```
-git clone https://github.com/iamlab-cmu/perception.git
-cd perception
+$ pip install opencv-contrib-python
+
+```
+- VISP ros node package to solve Ax=Bx given pair of [cam,ee pose]. Refer to http://wiki.ros.org/visp_hand2eye_calibration
+```
+$ sudo-apt get install ros-$ROS_DISTRO-visp-hand2eye-calibration
+
+```
+- realsense SDK package. Refer to https://github.com/IntelRealSense/realsense-ros. If installed correctly, should be able to roslaunch realsense2 file
+```
+$ roslaunch realsense2_camera rs_aligned_depth.launch
+
 ```
 
-2. Run the following in a virtual environment:
-```
-pip install -e .
+## Set up
+- Place a ChAruco board in FOV of Franka Robot arm with realsense. ChAruco board can be generated from https://calib.io/pages/camera-calibration-pattern-generator.
+- Franka robot is turned on and the Frankapy ROS API interface is up and running by calling below command. Franka joint /tf topics should be published and visible on RViz. 
+ ```
+$ cd Prog/frankapy
+$ bash bash_scripts/start_control_pc.sh -u student -i iam-[insert robot name here]
+
 ```
 
-3. Clone this repository:
-```
-git clone git@github.com:iamlab-cmu/camera-calibration.git
-cd camera-calibration
-```
+## Running
+- Modify the main.py file to adjust the path to where you want the generated cam_transform.csv and ee_transform.csv files.  
+- Modify the main.py file to adjust the intrinsic camera calibration info. You can do this by rosecho calling the topic /camera/color/camera_info.
+- Modify the ChAruco.py file init function to adjust the CharucoBoard_create() parameters with the ChAruco board dimensions you printed.  
 
-4. Run the following in a virtual environment:
 ```
-pip install -e .
-```
+$ python main.py
 
-## Running Instructions
-1. Start the Azure Kinect Camera
 ```
-roslaunch azure_kinect_ros_driver driver.launch
+- Given the generated two .csv files, modify publisher.py file if needed to see the path to the two .csv files are correct and can be loaded.
+- Run the VISP server that will print out camera extrinsic info upon a rosservice call to publish the data. The sequence is as follows in separate terminals:
+
 ```
-2. Open the calib/azure_kinect.intr file.
-3. Rostopic echo /rgb/camera_info once.
-4. Copy the first number in K: to after "_fx"
-5. Copy the third number in K: to after "_cx"
-6. Copy the fifth number in K: to after "_fy"
-7. Copy the sixth number in K: to after "_cy"
-8. If you are using the large checkerboard for an overhead camera, just run:
+$ rosrun visp_hand2eye_calibration visp_hand2eye_calibration_calibrator
+$ python publisher.py
+$ rosservice call compute_effector_camera
+
 ```
-python scripts/register_camera.py
-```
-9. If you are using a checkerboard on the hand, first move the robot into a position so that the checkerboard can be seen from the camera at a distance of around 2 feet away.
-10. Then start franka-interface and use the following command:
-```
-python scripts/register_camera_using_franka.py
-```
-11. Afterwards, check to make sure the calib/azure_kinect_overhead/azure_kinect_overhead_to_world.tf file is similar to calib/example_azure_kinect_overhead_to_world.tf.
-12. If the transformations are similar, then test the calibration using a flat surface and an alphabet block and run the following command:
-```
-python scripts/run_pick_up_using_camera.py
-```
+The calibrator node will subscribe to the published [cam,ee pose pairs], then upon a service call, print out the extrinsic calibration matrix.
