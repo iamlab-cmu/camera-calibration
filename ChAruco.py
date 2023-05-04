@@ -27,14 +27,17 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 from frankapy import FrankaArm
+from frankapy import FrankaConstants as FC
+
 
 class ChAruco:
     def __init__(self):
  
         #init franka
+        print("connecting to franka-interface")
         self.fa = FrankaArm()  
  
-        # reset franka to its home joints
+        print('will reset joints')
         self.fa.reset_joints()
 
         self.bridge = CvBridge()
@@ -48,6 +51,8 @@ class ChAruco:
 
 
     def get_pose_rb0(self,image_in):
+        # rospy.loginfo('Got image')
+        # rospy.logdebug('Got image')
         self.image_ros = image_in
 
         # Try to convert the ROS Image message to a CV2 Image
@@ -55,6 +60,8 @@ class ChAruco:
             self.image_cv = self.bridge.imgmsg_to_cv2(image_in, "bgr8")
         except CvBridgeError:
             rospy.logerr("CvBridge Error")
+            rospy.loginfo("CvBridge Error")
+            rospy.logdebug("CvBridge Error")
 
         # self.image_cv = self.bridge.imgmsg_to_cv2(image_in, "bgr8")
         self.recevied_image = True
@@ -100,7 +107,7 @@ class ChAruco:
 
         return camera_matrix, dist_coeff
 
-    def get_offset(self, camera_matrix, dist_coeff):
+    def get_offset(self, camera_matrix, dist_coeff, debug: bool = False):
         frame = self.get_image()
         corners, ids, rejected_points = cv2.aruco.detectMarkers(frame, self.aruco_dict)
 
@@ -110,13 +117,23 @@ class ChAruco:
             return None
 
 
-        ret, c_corners, c_ids = cv2.aruco.interpolateCornersCharuco(corners,ids,frame, self.board)
-        pose, rvec, tvec = cv2.aruco.estimatePoseCharucoBoard(c_corners, c_ids, self.board, camera_matrix, dist_coeff, np.empty(1), np.empty(1))
-        
-        return pose, rvec, tvec
+        ret, c_corners, c_ids = cv2.aruco.interpolateCornersCharuco(corners,ids, frame, self.board)
+        if debug:
+            image_copy = cv2.aruco.drawDetectedCornersCharuco(frame, c_corners, c_ids)
 
+        gotpose, rvec, tvec = cv2.aruco.estimatePoseCharucoBoard(c_corners, c_ids, self.board, 
+                                                              camera_matrix, dist_coeff, np.empty(1), np.empty(1))
+        if gotpose:
+            dist_coeff_copy = np.array(dist_coeff, dtype=np.float32).reshape(-1, 1)
+            image_disp = cv2.drawFrameAxes(image_copy, camera_matrix, dist_coeff_copy, rvec, tvec, 0.1)
+            cv2.imshow("Image", image_disp)
+            cv2.waitKey(0)
+
+        return gotpose, rvec, tvec
+    
     def run_guide_robot(self):
         guide_duration =  300
         self.fa.run_guide_mode(guide_duration, block=False) 
 
-    
+    def goto_joints(self, joints: np.ndarray):
+        self.fa.goto_joints(joints, joint_impedances=FC.DEFAULT_JOINT_IMPEDANCES, ignore_virtual_walls=True)
