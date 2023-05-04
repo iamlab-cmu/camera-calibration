@@ -18,14 +18,21 @@
 import rospy
 from geometry_msgs.msg import Transform
 
+
+# ==== Options to set for different configurations ====
+
+cam_transform_path = './cam_transform.txt'
+end_effector_transform_path = './ee_transform.txt'
+
+
 def read_log():
-    object2cam_file = open("./cam_transform.txt", "r") 
+    object2cam_file = open(cam_transform_path, "r") 
     object2cam = []
     for line in object2cam_file: 
         pose = [float(x) for x in line.split(',')]
         object2cam.append(pose)
     
-    effector2world_file = open("./ee_transform.txt", "r") 
+    effector2world_file = open(end_effector_transform_path, "r") 
     effector2world = []
     for line in effector2world_file: 
         pose = [float(x) for x in line.split(',')]
