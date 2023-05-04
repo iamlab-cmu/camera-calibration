@@ -39,6 +39,10 @@ desired_num_points_for_calib = 35
 f_cam = open('./data/cam_transform.csv', 'w')
 f_ee = open('./data/ee_transform.csv', 'w')
 
+def log_msg(msg):
+    print(msg)
+    rospy.loginfo(msg)
+    rospy.logdebug(msg)
 
 # ==== Options to set for different configurations ====
 
@@ -66,16 +70,18 @@ if __name__ == "__main__":
     #wait for image callback thread before proceeding
     ChAruco_instance = ChAruco.ChAruco()
     while ChAruco_instance.recevied_image == False:
+        log_msg("Sleeping")
         time.sleep(1)
 
     #display received image for debugging
+    # log_msg("Will show image")
     img = ChAruco_instance.get_image()
     img_size = ChAruco_instance.get_image_shape
     cv2.imshow("image", img) 
     cv2.waitKey(0)
+    log_msg("here")
 
     #call guidance mode to Franka robot
-
     if use_guide_mode:
         ChAruco_instance.run_guide_robot()
     else:
@@ -166,3 +172,4 @@ if __name__ == "__main__":
     f_cam.close()
     f_ee.close()
     print(" ----------- end of script ----------- ")
+

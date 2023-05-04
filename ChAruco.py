@@ -44,9 +44,12 @@ class ChAruco:
         self.image_cv = None
         self.recevied_image = False
 
-        self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_50)
+        #self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_50)
         #(num row, num col, size of checker, size of aruco tag, aruco definition)
-        self.board = cv2.aruco.CharucoBoard_create(7, 5, 0.03, 0.023, self.aruco_dict)
+        #self.board = cv2.aruco.CharucoBoard_create(7, 5, 0.03, 0.023, self.aruco_dict)
+        self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+        # self.board = cv2.aruco.CharucoBoard_create(6, 9, 0.022, 0.017, self.aruco_dict)
+        self.board = cv2.aruco.CharucoBoard_create(9, 6, 0.022, 0.017, self.aruco_dict)
         sub_image = rospy.Subscriber("/camera/color/image_raw", Image, self.get_pose_rb0)
 
 
