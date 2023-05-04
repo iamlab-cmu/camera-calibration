@@ -3,21 +3,21 @@
  # This python script is for generating sets of [cam pose, end-effector pose]
  # for robot hand-eye calibration using the Franka Panda Robot.
  #
- # Usage : Move robot to desired positions then press [enter] to record...repeat. 
+ # Usage : Move robot to desired positions then press [enter] to record...repeat.
  #
  # Output : cam_transform.csv, ee_transform.csv
- # 
+ #
  # Input  : /camera/color/image_raw (published through realsense2_camera package)
  #          /tf (published through Frankapy API)
- #          ChAruco board 
- 
+ #          ChAruco board
+
  # E-mail : MoonRobotics@cmu.edu    (Lee Moonyoung)
- 
+
  #
  # Versions :
  # v1.0
  ###################################################################
- 
+
 import numpy as np
 import rospy
 
@@ -50,17 +50,17 @@ use_guide_mode = False
 q_positions_txt = './data/camera_in_hand_back_joint_samples.txt'
 
 if __name__ == "__main__":
-    
+
     print(" ----------- start  of script ----------- ")
-    
+
     #cam matrix, dist coeff from RealsenseD435 factory settings
     #read in from /camera/color/camera_info ROS topic
     camera_matrix = np.array([
-        [612.920654296875, 0.0, 316.9841003417969], 
-        [0.0, 612.995361328125, 245.92503356933594], 
+        [612.920654296875, 0.0, 316.9841003417969],
+        [0.0, 612.995361328125, 245.92503356933594],
         [0.0, 0.0, 1.0],
     ])
-         
+
     dist_coeff = np.array([0,0,0,0,0])
 
     #wait for image callback thread before proceeding
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     #display received image for debugging
     img = ChAruco_instance.get_image()
     img_size = ChAruco_instance.get_image_shape
-    cv2.imshow("image", img) 
+    cv2.imshow("image", img)
     cv2.waitKey(0)
 
     #call guidance mode to Franka robot
@@ -85,13 +85,13 @@ if __name__ == "__main__":
         assert desired_num_points_for_calib < q_positions_arr.shape[0], (
                'Number of points for calibration should be less than number of sampled joints')
 
-    #create header for Transform Array 
+    #create header for Transform Array
     #not needed b/c won't be publishing directly but through publisher.py file
     cam_tf = TransformArray()
     cam_tf.header.frame_id = "/camera_link"
     cam_tf.header.stamp = rospy.Time.now()
     ee_tf = TransformArray()
-    
+
     # create the csv writer
     writer = csv.writer(f_cam)
     writer_ee = csv.writer(f_ee)
@@ -100,9 +100,13 @@ if __name__ == "__main__":
     for i in range (desired_num_points_for_calib):
         # Go to some position and then record stuff
         if use_guide_mode:
-            print(f"this is {i} index")
-            cv2.imshow("image", img)
-            cv2.waitKey(0) #<------ stopper until moving robot to desired position
+            try:
+                print(f"this is {i} index")
+                cv2.imshow("image", img)
+                cv2.waitKey(0) #<------ stopper until moving robot to desired position
+            except KeybboardInterrupt:
+                # Stop skill (guide mode) when doing Ctrl-C
+                ChAruco_instance.fa.stop_skill()
         else:
             cv2.destroyAllWindows()
             q_i = q_positions_arr[i]
@@ -145,7 +149,7 @@ if __name__ == "__main__":
         ee_transform.translation.x = ee_trans[0]
         ee_transform.translation.y = ee_trans[1]
         ee_transform.translation.z = ee_trans[2]
-        
+
         ee_transform.rotation.x = ee_quat[0]
         ee_transform.rotation.y = ee_quat[1]
         ee_transform.rotation.z = ee_quat[2]
@@ -165,4 +169,6 @@ if __name__ == "__main__":
     # close the file
     f_cam.close()
     f_ee.close()
+    if run_guide_mode:
+        ChAruco_instance.fa.stop_skill()
     print(" ----------- end of script ----------- ")
