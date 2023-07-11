@@ -18,22 +18,21 @@
  # v1.0
  ###################################################################
  
-import numpy as np
-import rospy
-
-import time
-import ChAruco
 import cv2
-from scipy.spatial.transform import Rotation as R
+import csv
+import click
+import numpy as np
+import pandas
+import rospy
+import tf
+import time
+
+import camera_calib.ChAruco as ChAruco
+from camera_calib.ChAruco import Camera
+from scipy.spatial.transform import Rotation
 from geometry_msgs.msg import Transform
 from visp_hand2eye_calibration.msg import TransformArray
-import csv
-import pandas
 
-import tf
-
-#get multiple frames
-desired_num_points_for_calib = 35
 
 # filenames to store saved csv files
 f_cam = open('./data/cam_transform.csv', 'w')
@@ -44,37 +43,35 @@ def log_msg(msg):
     rospy.loginfo(msg)
     rospy.logdebug(msg)
 
-# ==== Options to set for different configurations ====
+# q_positions_txt = './data/camera_in_hand_back_joint_samples.txt'
+# q_positions_txt = './data/static_camera_top_mount.txt'
 
-# Use guide mode for collecting samples
-use_guide_mode = False
-
-# Use fixed q_positions from a csv file with joint positions.
-# Will only be used if `use_guide_mode=False`
-q_positions_txt = './data/camera_in_hand_back_joint_samples.txt'
-
-if __name__ == "__main__":
-    
+@click.command()
+@click.option('--guide-mode/--no-guide-mode', default=False, help='Use guide mode to move the robot.')
+@click.option('--joint-positions-txt', default='./data/camera_in_hand_back_joint_samples.txt', 
+              help='Path to load joints configurations to move robot.')
+@click.option('--desired-num-points-for-calib', default=5,
+              help='Total number of images to sample for calibration (default: 5')
+@click.option('--camera-topic', default='/rgb/image_raw',
+              help='Total number of images to sample for calibration (default: 5')
+@click.option('--camera-info-topic', default='/rgb/camera_info', help='Camera info topic name')
+def move_robot_and_calibrate_camera(
+    guide_mode: bool,
+    joint_positions_txt: str,
+    desired_num_points_for_calib: int,
+    camera_topic: str,
+    camera_info_topic: str):
     print(" ----------- start  of script ----------- ")
-    
-    #cam matrix, dist coeff from RealsenseD435 factory settings
-    #read in from /camera/color/camera_info ROS topic
-    camera_matrix = np.array([
-        [612.920654296875, 0.0, 316.9841003417969], 
-        [0.0, 612.995361328125, 245.92503356933594], 
-        [0.0, 0.0, 1.0],
-    ])
-         
-    dist_coeff = np.array([0,0,0,0,0])
 
     #wait for image callback thread before proceeding
-    ChAruco_instance = ChAruco.ChAruco()
+    ChAruco_instance = ChAruco.ChAruco(camera_img_topic=camera_topic,
+                                       camera_info_topic=camera_info_topic)
+
     while ChAruco_instance.recevied_image == False:
         log_msg("Sleeping")
         time.sleep(1)
 
     #display received image for debugging
-    # log_msg("Will show image")
     img = ChAruco_instance.get_image()
     img_size = ChAruco_instance.get_image_shape
     cv2.imshow("image", img) 
@@ -82,10 +79,10 @@ if __name__ == "__main__":
     log_msg("here")
 
     #call guidance mode to Franka robot
-    if use_guide_mode:
+    if guide_mode:
         ChAruco_instance.run_guide_robot()
     else:
-        q_positions_df = pandas.read_csv(q_positions_txt)
+        q_positions_df = pandas.read_csv(joint_positions_txt)
         assert len(q_positions_df.columns) == 7, 'Joint positions txt should have 7 joints'
         q_positions_arr = np.array(q_positions_df)
         assert desired_num_points_for_calib < q_positions_arr.shape[0], (
@@ -101,11 +98,13 @@ if __name__ == "__main__":
     # create the csv writer
     writer = csv.writer(f_cam)
     writer_ee = csv.writer(f_ee)
+    # TODO: Save the image as well.
+    multi_image_board_info_dict = {}
 
     #For desired number of calib pts, move robot and collect [cam pose, EE pose]
     for i in range (desired_num_points_for_calib):
         # Go to some position and then record stuff
-        if use_guide_mode:
+        if guide_mode:
             print(f"this is {i} index")
             cv2.imshow("image", img)
             cv2.waitKey(0) #<------ stopper until moving robot to desired position
@@ -113,17 +112,23 @@ if __name__ == "__main__":
             cv2.destroyAllWindows()
             q_i = q_positions_arr[i]
             ChAruco_instance.goto_joints(q_i)
-
+        
         # get camera pose from camera
-        gotpose, rot, trans = ChAruco_instance.get_offset(camera_matrix, dist_coeff, debug=True)
+        gotpose, rot_trans_info = ChAruco_instance.get_offset(debug=True)
+        if not gotpose:
+            breakpoint()
+            continue
+        
+        rot, trans, info = rot_trans_info
+        multi_image_board_info_dict[i] = info
+
         if trans.ndim > 1:
             assert trans.squeeze().ndim == 1, 'Should have one dimension for (x, y, z)'
             trans = trans.squeeze()
 
         # print(f"pose, rot,trans {gotpose,rot,trans}")
         R_np,_ = cv2.Rodrigues(rot)
-        R = R.from_matrix(R_np)
-        quat = R.as_quat()
+        quat = Rotation.from_matrix(R_np).as_quat()
 
         #convert to TF
         cam_transform = Transform()
@@ -167,9 +172,12 @@ if __name__ == "__main__":
         # write a row to the csv file
         writer_ee.writerow(ee_row)
 
-
     # close the file
     f_cam.close()
     f_ee.close()
+
     print(" ----------- end of script ----------- ")
 
+
+if __name__ == '__main__':
+    move_robot_and_calibrate_camera()
