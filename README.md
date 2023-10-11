@@ -41,8 +41,6 @@ $ python main.py
 
 ```
 - This code will put Franka into Guide Mode. Manually hand move the robot to 15 different positions, press enter in between each position to store data.
-- Given the generated two .csv files, modify publisher.py file if needed to see the path to the two .csv files are correct and can be loaded.
-- Run the VISP server that will print out camera extrinsic info upon a rosservice call to publish the data. The sequence is as follows in separate terminals:
 
 ### Options to configure
 
