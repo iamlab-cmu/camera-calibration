@@ -55,6 +55,14 @@ How many points to sample for calibration? This option can be configured by chan
 
 How to sample points for calibration? Using half-ellipsoids that densely cover different configurations is the preferred approach.
 
+## Getting the extrinsics
+
+Once we have recorded the marker locations from different sampled images (either using guide mode or pre-specified joint configurations) we need to run a separate server to calculate 
+our result. To do this follow the steps below:
+
+- Given the generated two .csv files, modify publisher.py file if needed to see the path to the two .csv files are correct and can be loaded.
+- Run the VISP server that will print out camera extrinsic info upon a rosservice call to publish the data. The sequence is as follows in separate terminals:
+
 ```
 $ rosrun visp_hand2eye_calibration visp_hand2eye_calibration_calibrator
 $ python publisher.py
