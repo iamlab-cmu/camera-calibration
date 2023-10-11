@@ -44,6 +44,17 @@ $ python main.py
 - Given the generated two .csv files, modify publisher.py file if needed to see the path to the two .csv files are correct and can be loaded.
 - Run the VISP server that will print out camera extrinsic info upon a rosservice call to publish the data. The sequence is as follows in separate terminals:
 
+### Options to configure
+
+Using guide mode to move the robot can sometimes be painful. Since the robot may not be fully static when it captures the image in a guide mode and hence a user needs to stabilize
+it. This is not ideal. As an alternative, we provide an option to not use guide mode and use pre-defined poses saved here `./data/`. These joint configurations are loaded and iterated
+over and images are recorded at each configuration. 
+To enable this set the `use_guide_mode` flag in `main.py` to False [link](https://github.com/iamlab-cmu/camera-calibration/blob/multiview_handeye/main.py#L46)
+
+How many points to sample for calibration? This option can be configured by changing the `desired_num_points_for_calib` parameter in main.py (see [here](https://github.com/iamlab-cmu/camera-calibration/blob/multiview_handeye/main.py#L36)).
+
+How to sample points for calibration? Using half-ellipsoids that densely cover different configurations is the preferred approach.
+
 ```
 $ rosrun visp_hand2eye_calibration visp_hand2eye_calibration_calibrator
 $ python publisher.py
