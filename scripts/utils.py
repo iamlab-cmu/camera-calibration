@@ -67,9 +67,9 @@ def createFolder(directory):
     except OSError:
         print ('Error: Creating directory. ' +  directory)
 
-def get_object_center_point_in_world(object_image_center_x, object_image_center_y, depth_image, intrinsics, transform):    
+def get_object_center_point_in_world(object_image_center_x, object_image_center_y, depth_image, intrinsics, transform, sensor_name='kinect2_overhead'):    
     
-    object_center = Point(np.array([object_image_center_x, object_image_center_y]), 'azure_kinect_overhead')
+    object_center = Point(np.array([object_image_center_x, object_image_center_y]), sensor_name)
     object_depth = depth_image[object_image_center_y, object_image_center_x] * 0.001
     print("x, y, z: ({:.4f}, {:.4f}, {:.4f})".format(
         object_image_center_x, object_image_center_y, object_depth))
